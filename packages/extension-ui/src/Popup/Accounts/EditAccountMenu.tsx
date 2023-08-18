@@ -12,10 +12,12 @@ import { IconTheme } from '@polkadot/react-identicon/types';
 
 import exportAccountIcon from '../../assets/export.svg';
 import subAccountIcon from '../../assets/subAccount.svg';
+import unlinkIcon from '../../assets/unlink.svg';
 import forgetIcon from '../../assets/vanish.svg';
 import { Svg } from '../../components';
 import { AccountContext, SettingsContext } from '../../components/contexts';
 import * as LinksList from '../../components/LinksList';
+import useConnectedActiveTabUrl from '../../hooks/useConnectedActiveTabUrl';
 import { useGoTo } from '../../hooks/useGoTo';
 import useToast from '../../hooks/useToast';
 import useTranslation from '../../hooks/useTranslation';
@@ -38,6 +40,7 @@ function EditAccountMenu({
 }: Props): React.ReactElement<Props> {
   const { t } = useTranslation();
   const { accounts, master } = useContext(AccountContext);
+  const connectedActiveTabUrl = useConnectedActiveTabUrl();
 
   const { show } = useToast();
 
@@ -112,12 +115,7 @@ function EditAccountMenu({
           <LinksList.Group>
             <LinksList.Item
               onClick={goTo(`/account/derive/${address}/locked`)}
-              preIcon={
-                <Svg
-                  className='icon'
-                  src={subAccountIcon}
-                />
-              }
+              preIcon={<Icon src={subAccountIcon} />}
               rightIcon='chevron'
               title={t<string>('Derive sub-account')}
             />
@@ -126,17 +124,20 @@ function EditAccountMenu({
         <LinksList.Group>
           <LinksList.Item
             onClick={goTo(`/account/export/${address}`)}
-            preIcon={
-              <Svg
-                className='icon'
-                src={exportAccountIcon}
-              />
-            }
+            preIcon={<Icon src={exportAccountIcon} />}
             rightIcon='chevron'
             title={t<string>('Export account')}
           />
         </LinksList.Group>
         <LinksList.Group>
+          {connectedActiveTabUrl && (
+            <LinksList.Item
+              onClick={goTo(`/url/manage?url=${connectedActiveTabUrl}`)}
+              preIcon={<Icon src={unlinkIcon} />}
+              rightIcon='chevron'
+              title={t<string>('Connect / disconnect account')}
+            />
+          )}
           <ForgetListItem
             onClick={goTo(`/account/forget/${address}`)}
             preIcon={
@@ -160,6 +161,7 @@ export default React.memo(
   overflow-y: scroll;
   scrollbar-width: none;
   padding-top: 32px;
+  padding-bottom: 16px;
       
   .identityIcon {
     display: flex;
@@ -184,9 +186,12 @@ export default React.memo(
   )
 );
 
-const ForgetIcon = styled(Svg)`
+const Icon = styled(Svg)`
   width: 20px;
   height: 20px;
+`;
+
+const ForgetIcon = styled(Icon)`
   background: ${({ theme }) => theme.iconDangerColor};
 `;
 

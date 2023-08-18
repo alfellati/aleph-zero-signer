@@ -50,13 +50,9 @@ function AccountManagement({ className, location: { search } }: Props): React.Re
     }
 
     updateAuthorization(selectedAccounts, url)
-      .then(() => onAction('/auth-list'))
+      .then(() => onAction('..'))
       .catch(console.error);
   }, [onAction, selectedAccounts, url]);
-
-  const _onCancel = useCallback((): void => {
-    onAction('/auth-list');
-  }, [onAction]);
 
   const isFormValid = selectedAccountsChanged;
 
@@ -102,7 +98,7 @@ function AccountManagement({ className, location: { search } }: Props): React.Re
           {hierarchy.length > 0 && (
             <CustomButtonArea>
               <Button
-                onClick={_onCancel}
+                onClick={() => onAction('..')}
                 secondary
                 type='button'
               >
