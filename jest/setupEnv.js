@@ -1,6 +1,8 @@
 // Copyright 2017-2023 @polkadot/extension authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
+require('./mockLocalStorage');
+
 const nodeCrypto = require('crypto');
 const { TextDecoder } = require('@polkadot/x-textencoder/node');
 const { TextEncoder } = require('@polkadot/x-textencoder/node');
