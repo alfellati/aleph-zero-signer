@@ -306,8 +306,8 @@ export interface RequestSigningIsLocked {
 }
 
 export interface ResponseSigningIsLocked {
-  isLocked: boolean;
   remainingTime: number;
+  isLocked: boolean;
 }
 
 export type RequestSigningSubscribe = null;
