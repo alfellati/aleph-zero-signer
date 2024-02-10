@@ -33,6 +33,11 @@ const authUrls = {
 
 chromeStub.windows.getAll.resolves([]);
 
+// @ts-expect-error the "sinon-chrome" mocking library does not provide stubs for session storage, so we have to append them ourselves
+chromeStub.storage.session = {
+  get: () => Promise.resolve({})
+};
+
 const stubChromeStorage = (data: Record<string, unknown> = {}) => chromeStub.storage.local.get.resolves({
   authUrls,
   ...data

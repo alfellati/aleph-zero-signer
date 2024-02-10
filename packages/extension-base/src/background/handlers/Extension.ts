@@ -18,12 +18,11 @@ import { accounts as accountsObservable } from '@polkadot/ui-keyring/observable/
 import { assert, isHex, u8aToHex } from '@polkadot/util';
 import { keyExtractSuri, mnemonicGenerate, mnemonicValidate } from '@polkadot/util-crypto';
 
+import chromeStorage from './chromeStorage';
 import { POPUP_CREATE_WINDOW_DATA } from './consts';
 import { openCenteredWindow } from './helpers';
 import State from './State';
 import { createSubscription, unsubscribe } from './subscriptions';
-
-type CachedUnlocks = Record<string, number>;
 
 type GetContentPort = (tabId: number) => chrome.runtime.Port
 
@@ -40,12 +39,9 @@ function isJsonPayload (value: SignerPayloadJSON | SignerPayloadRaw): value is S
 }
 
 export default class Extension {
-  readonly #cachedUnlocks: CachedUnlocks;
-
   readonly #state: State;
 
   constructor (state: State) {
-    this.#cachedUnlocks = {};
     this.#state = state;
   }
 
@@ -137,20 +133,26 @@ export default class Extension {
     return true;
   }
 
-  private refreshAccountPasswordCache (pair: KeyringPair): number {
+  private async refreshAccountPasswordCache (pair: KeyringPair): Promise<{remainingTime: number, cachedPassword?: string}> {
     const { address } = pair;
 
-    const savedExpiry = this.#cachedUnlocks[address] || 0;
-    const remainingTime = savedExpiry - Date.now();
+    const savedPasswords = await chromeStorage.getItem('password-cache') ?? {};
+    const expiresAt = savedPasswords[address]?.expiresAt ?? 0;
+    const remainingTime = expiresAt - Date.now();
+    const cachedPassword = savedPasswords[address]?.password;
 
-    if (remainingTime < 0) {
-      this.#cachedUnlocks[address] = 0;
-      pair.lock();
-
-      return 0;
+    if (remainingTime > 0) {
+      return { remainingTime, cachedPassword };
     }
 
-    return remainingTime;
+    if (address in savedPasswords) {
+      delete savedPasswords[address];
+      await chromeStorage.setItem('password-cache', () => (savedPasswords));
+    }
+
+    pair.lock();
+
+    return { remainingTime: 0 };
   }
 
   private accountsShow ({ address, isShowing }: RequestAccountShow): boolean {
@@ -334,7 +336,7 @@ export default class Extension {
     };
   }
 
-  private async signingApprovePassword ({ id, password, savePass }: RequestSigningApprovePassword, getContentPort: GetContentPort): Promise<void> {
+  private async signingApprovePassword ({ id, password: inputPassword, savePass }: RequestSigningApprovePassword, getContentPort: GetContentPort): Promise<void> {
     const queued = await this.#state.getSignRequest(id);
 
     assert(queued, 'Unable to find request');
@@ -351,10 +353,12 @@ export default class Extension {
       throw error;
     }
 
-    this.refreshAccountPasswordCache(pair);
+    const { cachedPassword, remainingTime } = await this.refreshAccountPasswordCache(pair);
+
+    const password = cachedPassword ?? inputPassword;
 
     // if the keyring pair is locked, the password is needed
-    if (pair.isLocked && !password) {
+    if (!password) {
       const error = new Error('Password needed to unlock the account');
 
       await this.#state.removeSignRequest(id);
@@ -408,13 +412,14 @@ export default class Extension {
         .createType('ExtrinsicPayload', payload, { version: payload.version })
         .sign(pair);
 
-    if (savePass) {
+    if (savePass && remainingTime <= 0) {
       // unlike queued.account.address the following
       // address is encoded with the default prefix
       // which what is used for password caching mapping
-      this.#cachedUnlocks[pair.address] = Date.now() + PASSWORD_EXPIRY_MS;
-    } else {
-      pair.lock();
+
+      await chromeStorage.setItem('password-cache', (savedPasswords) => (
+        { ...savedPasswords, [pair.address]: { password, expiresAt: Date.now() + PASSWORD_EXPIRY_MS } }
+      ));
     }
 
     await this.#state.removeSignRequest(id);
@@ -449,11 +454,11 @@ export default class Extension {
 
     assert(pair, 'Unable to find pair');
 
-    const remainingTime = this.refreshAccountPasswordCache(pair);
+    const { remainingTime } = await this.refreshAccountPasswordCache(pair);
 
     return {
-      isLocked: pair.isLocked,
-      remainingTime
+      remainingTime,
+      isLocked: remainingTime <= 0
     };
   }
 

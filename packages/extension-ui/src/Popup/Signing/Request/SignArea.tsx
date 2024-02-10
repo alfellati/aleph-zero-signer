@@ -45,7 +45,9 @@ function SignArea({ buttonText, className, error, isExternal, isFirst, isLast, s
 
           // if the account was unlocked check the remember me
           // automatically to prolong the unlock period
-          !isLocked && setSavePass(true);
+          if(remainingTime > 0) {
+            setSavePass(true);
+          }
         })
         .catch((error: Error) => console.error(error));
 
@@ -92,20 +94,15 @@ function SignArea({ buttonText, className, error, isExternal, isFirst, isLast, s
 
   const StyledCheckbox = styled(Checkbox)`
     margin-left: 8px;
-`;
+  `;
 
   const RememberPasswordCheckbox = () => (
     <StyledCheckbox
       checked={savePass}
-      label={
-        isLocked
-          ? t<string>('Remember password for {{expiration}} minutes', {
-              replace: { expiration: PASSWORD_EXPIRY_MIN }
-            })
-          : t<string>('Extend the period without password by {{expiration}} minutes', {
-              replace: { expiration: PASSWORD_EXPIRY_MIN }
-            })
-      }
+      disabled={!isLocked}
+      label={t<string>('Remember password for {{expiration}} minutes', {
+        replace: { expiration: PASSWORD_EXPIRY_MIN }
+      })}
       onChange={setSavePass}
     />
   );

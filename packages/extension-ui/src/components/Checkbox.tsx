@@ -9,6 +9,7 @@ import Subtract from '../assets/subtract.svg';
 
 interface Props {
   checked: boolean;
+  disabled?: boolean;
   indeterminate?: boolean;
   className?: string;
   label: ReactNode;
@@ -20,6 +21,7 @@ interface Props {
 function Checkbox({
   checked,
   className,
+  disabled,
   indeterminate,
   label,
   onChange,
@@ -49,6 +51,7 @@ function Checkbox({
         {label}
         <input
           checked={checked && !indeterminate}
+          disabled={disabled}
           onBlur={() => setIsFocusVisible(false)}
           onChange={_onChange}
           onClick={_onClick}
@@ -102,7 +105,7 @@ const Label = styled.label<{ isOutlined: boolean; variant: NonNullable<Props['va
     cursor: pointer;
     user-select: none;
     padding-left: ${({ variant }) => variantToStyles[variant].paddingLeft};;
-    padding-top: 1px;
+    padding-top: 2px;
     color: ${({ theme }) => theme.subTextColor};
     font-size: ${({ theme }) => theme.fontSize};
     line-height: ${({ theme }) => theme.lineHeight};
@@ -113,6 +116,10 @@ const Label = styled.label<{ isOutlined: boolean; variant: NonNullable<Props['va
 
     :has(input:focus-visible) {
       outline-style: auto;
+    }
+
+    :has(input:disabled) {
+      color: ${({ theme }) => theme.disabledTextColor}
     }
 
     /* :has selector is the pure css solution to this problem, but doesn't have (so far) enough support ;( */
@@ -186,6 +193,15 @@ export default styled(Checkbox)(
         top: 2px;
         mask: url(${Subtract});
         mask-size: cover;
+      }
+    }
+
+    input:disabled ~ .checkbox-ui {
+      background: ${theme.disabledTextColor};
+      box-shadow: 0 0 0 1px ${theme.disabledTextColor};
+
+      &:hover {
+        box-shadow: 0 0 0 1px ${theme.disabledTextColor};
       }
     }
   }
