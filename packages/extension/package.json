@@ -17,9 +17,9 @@
   "version": "{{signer-version}}",
   "dependencies": {
     "@babel/runtime": "^7.20.7",
-    "@polkadot/extension-base": "^0.44.8",
-    "@polkadot/extension-inject": "^0.44.8",
-    "@polkadot/extension-ui": "^0.44.8"
+    "@polkadot/extension-base": "^0.23.1",
+    "@polkadot/extension-inject": "^0.3.1",
+    "@polkadot/extension-ui": "^0.2.1"
   },
   "devDependencies": {
     "@polkadot/dev": "^0.67.177",
